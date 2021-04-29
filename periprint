@@ -1,0 +1,97 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+
+# This Python file uses the following encoding: utf-8
+import sys
+import os
+
+
+from PySide2.QtWidgets import QApplication, QWidget, QFileDialog, QGraphicsScene
+from PySide2.QtCore import Qt, QBuffer, QFile
+from PySide2.QtUiTools import QUiLoader
+from PySide2.QtGui import QImage, QPixmap, QPalette, QPainter
+#from PySide2.QtPrintSupport import QPrintDialog, QPrinter
+
+# peripage imports
+import ppa6
+import numpy
+from PIL import Image
+import io
+
+
+class Peripage(QWidget):
+    def __init__(self):
+        super(Peripage, self).__init__()
+        self.load_ui()
+
+        self.connected = False
+        self.peripageType = ppa6.PrinterType.A6p
+        self.timeout = 5.0
+
+        self.window.connectButton.clicked.connect(self.connectPrinter)
+        #self.window.printButton.clicked.connect(self.periPrintTest)
+        self.window.printButton.clicked.connect(self.periPrintImage)
+        self.window.loadButton.clicked.connect(self.open)
+
+        self.scene = QGraphicsScene()
+        self.window.immagine.setScene(self.scene)
+
+    def connectPrinter(self):
+        self.peripage = ppa6.Printer(self.window.mac.text(), self.peripageType, self.timeout)
+        self.peripage.connect()
+        self.peripage.reset()
+        if self.peripage.isConnected():
+            self.connected = True
+        self.window.label_3.setEnabled(True)
+        self.window.label_4.setEnabled(True)
+        self.window.connected.setEnabled(True)
+        self.window.percentuale.setText(str(self.peripage.getDeviceBattery()))
+        self.window.percentuale.setEnabled(True)
+
+    def periPrintTest(self):
+        if self.connected:
+            self.peripage.setConcentration(self.window.contrast.value())
+            self.peripage.writeASCII('FUNZIONA!!!\n')
+            self.peripage.printBreak(self.window.breaklength.value())
+            self.window.percentuale.setText(str(self.peripage.getDeviceBattery()))
+
+    def periPrintImage(self):
+        if self.connected:
+            self.peripage.setConcentration(self.window.contrast.value())
+            self.buffer = QBuffer()
+            self.buffer.open(QBuffer.ReadWrite)
+            self.image.save(self.buffer, "PNG")
+            self.peripage.printImage(Image.open(io.BytesIO(self.buffer.data().data())))
+            self.peripage.printBreak(self.window.breaklength.value())
+            self.window.percentuale.setText(str(self.peripage.getDeviceBattery()))
+
+
+    def open(self):
+        options = QFileDialog.Options()
+        fileName, _ = QFileDialog.getOpenFileName(self, 'Open image file', '',
+                                                 'Images (*.png *.jpeg *.jpg *.bmp *.gif)', options=options)
+        if fileName:
+            self.image = QImage(fileName)
+            if self.image.isNull():
+                QMessageBox.information(self, "Image Viewer", "Cannot load %s." % fileName)
+                return
+
+            self.scene.clear()
+            self.scene.addPixmap(QPixmap.fromImage(self.image))
+            self.window.immagine.fitInView(self.image.rect(), Qt.KeepAspectRatio)
+            self.scene.update()
+
+
+    def load_ui(self):
+        loader = QUiLoader()
+        path = os.path.join(os.path.dirname(__file__), "form.ui")
+        ui_file = QFile(path)
+        ui_file.open(QFile.ReadOnly)
+        self.window = loader.load(ui_file, self)
+        ui_file.close()
+
+if __name__ == "__main__":
+    app = QApplication([])
+    widget = Peripage()
+    widget.show()
+    sys.exit(app.exec_())
