@@ -75,12 +75,6 @@ class Peripage(QWidget):
         #battery info update
         self.window.percentuale.setText(str(self.peripage.getDeviceBattery()))
 
-    def QImagetoPIL(self, img):
-        buffer = QBuffer()
-        buffer.open(QBuffer.ReadWrite)
-        img.save(buffer, "PNG")
-        return Image.open(io.BytesIO(buffer.data().data()))
-
 
     def open(self):
         options = QFileDialog.Options()
@@ -91,11 +85,7 @@ class Peripage(QWidget):
             if self.image.isNull():
                 QMessageBox.information(self, "Image Viewer", "Cannot load %s." % fileName)
                 return
-
-            self.scene.clear()
-            self.scene.addPixmap(QPixmap.fromImage(self.image))
-            self.window.immagine.fitInView(self.image.rect(), Qt.KeepAspectRatio)
-            self.scene.update()
+            self.updateScene(self.image)
             #battery info update
             self.window.percentuale.setText(str(self.peripage.getDeviceBattery()))
 
@@ -106,12 +96,21 @@ class Peripage(QWidget):
 
     def generateQR(self):
         self.image = ImageQt.ImageQt(qrcode.make(self.window.qrLine.text(), border=self.window.qrBorder.value()).convert('L'))
-        self.scene.clear()
-        self.scene.addPixmap(QPixmap.fromImage(self.image))
-        self.window.immagine.fitInView(self.image.rect(), Qt.KeepAspectRatio)
-        self.scene.update()
+        self.updateScene(self.image)
         #battery info update
         self.window.percentuale.setText(str(self.peripage.getDeviceBattery()))
+
+    def QImagetoPIL(self, img):
+        buffer = QBuffer()
+        buffer.open(QBuffer.ReadWrite)
+        img.save(buffer, "PNG")
+        return Image.open(io.BytesIO(buffer.data().data()))
+
+    def updateScene(self, img):
+        self.scene.clear()
+        self.scene.addPixmap(QPixmap.fromImage(img))
+        self.window.immagine.fitInView(img.rect(), Qt.KeepAspectRatio)
+        self.scene.update()
 
 
     def load_ui(self):
