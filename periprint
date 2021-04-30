@@ -6,7 +6,7 @@ import sys
 import os
 
 
-from PySide2.QtWidgets import QApplication, QWidget, QFileDialog, QGraphicsScene
+from PySide2.QtWidgets import QApplication, QWidget, QFileDialog, QGraphicsScene, QMessageBox
 from PySide2.QtCore import Qt, QBuffer, QFile
 from PySide2.QtUiTools import QUiLoader
 from PySide2.QtGui import QImage, QPixmap, QPalette, QPainter
