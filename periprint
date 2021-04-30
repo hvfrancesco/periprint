@@ -9,7 +9,7 @@ import os
 from PySide2.QtWidgets import QApplication, QWidget, QFileDialog, QGraphicsScene, QMessageBox
 from PySide2.QtCore import Qt, QBuffer, QFile
 from PySide2.QtUiTools import QUiLoader
-from PySide2.QtGui import QImage, QPixmap, QPalette, QPainter
+from PySide2.QtGui import QImage, QPixmap, QPalette, QPainter, QTransform
 #from PySide2.QtPrintSupport import QPrintDialog, QPrinter
 
 # peripage imports
@@ -35,6 +35,8 @@ class Peripage(QWidget):
         self.window.printButton.clicked.connect(self.periPrintImage)
         self.window.breakButton.clicked.connect(self.paperFeed)
         self.window.loadButton.clicked.connect(self.open)
+        self.window.rotateCWButton.clicked.connect(self.rotateImageCW)
+        self.window.rotateACWButton.clicked.connect(self.rotateImageACW)
         self.window.qrButton.clicked.connect(self.generateQR)
         self.window.qrLine.textChanged.connect(self.activateQR)
 
@@ -106,12 +108,27 @@ class Peripage(QWidget):
         img.save(buffer, "PNG")
         return Image.open(io.BytesIO(buffer.data().data()))
 
+    def rotateImageCW(self):
+        transform = QTransform()
+        transform.rotate(90)
+        self.image = self.image.transformed(transform)
+        self.updateScene(self.image)
+
+    def rotateImageACW(self):
+        transform = QTransform()
+        transform.rotate(-90)
+        self.image = self.image.transformed(transform)
+        self.updateScene(self.image)
+
     def updateScene(self, img):
         self.scene.clear()
         self.scene.addPixmap(QPixmap.fromImage(img))
         self.window.immagine.fitInView(img.rect(), Qt.KeepAspectRatio)
         self.scene.update()
-
+        if not self.window.rotateCWButton.isEnabled():
+            self.window.rotateCWButton.setEnabled(True)
+        if not self.window.rotateACWButton.isEnabled():
+            self.window.rotateACWButton.setEnabled(True)
 
     def load_ui(self):
         loader = QUiLoader()

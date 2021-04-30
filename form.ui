@@ -329,6 +329,38 @@
     <string>^</string>
    </property>
   </widget>
+  <widget class="QPushButton" name="rotateCWButton">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>680</x>
+     <y>260</y>
+     <width>61</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>rot cw</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="rotateACWButton">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>610</x>
+     <y>260</y>
+     <width>61</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>rot acw</string>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections/>
