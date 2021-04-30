@@ -15,8 +15,10 @@ from PySide2.QtGui import QImage, QPixmap, QPalette, QPainter
 # peripage imports
 import ppa6
 import numpy
-from PIL import Image
+from PIL import Image, ImageQt
 import io
+
+import qrcode
 
 
 class Peripage(QWidget):
@@ -31,7 +33,10 @@ class Peripage(QWidget):
         self.window.connectButton.clicked.connect(self.connectPrinter)
         #self.window.printButton.clicked.connect(self.periPrintTest)
         self.window.printButton.clicked.connect(self.periPrintImage)
+        self.window.breakButton.clicked.connect(self.paperFeed)
         self.window.loadButton.clicked.connect(self.open)
+        self.window.qrButton.clicked.connect(self.generateQR)
+        self.window.qrLine.textChanged.connect(self.activateQR)
 
         self.scene = QGraphicsScene()
         self.window.immagine.setScene(self.scene)
@@ -47,6 +52,8 @@ class Peripage(QWidget):
         self.window.connected.setEnabled(True)
         self.window.percentuale.setText(str(self.peripage.getDeviceBattery()))
         self.window.percentuale.setEnabled(True)
+        self.window.printButton.setEnabled(True)
+        self.window.breakButton.setEnabled(True)
 
     def periPrintTest(self):
         if self.connected:
@@ -58,12 +65,21 @@ class Peripage(QWidget):
     def periPrintImage(self):
         if self.connected:
             self.peripage.setConcentration(self.window.contrast.value())
-            self.buffer = QBuffer()
-            self.buffer.open(QBuffer.ReadWrite)
-            self.image.save(self.buffer, "PNG")
-            self.peripage.printImage(Image.open(io.BytesIO(self.buffer.data().data())))
+            self.peripage.printImage(self.QImagetoPIL(self.image))
             self.peripage.printBreak(self.window.breaklength.value())
+            #battery info update
             self.window.percentuale.setText(str(self.peripage.getDeviceBattery()))
+
+    def paperFeed(self):
+        self.peripage.printBreak(self.window.breaklength.value())
+        #battery info update
+        self.window.percentuale.setText(str(self.peripage.getDeviceBattery()))
+
+    def QImagetoPIL(self, img):
+        buffer = QBuffer()
+        buffer.open(QBuffer.ReadWrite)
+        img.save(buffer, "PNG")
+        return Image.open(io.BytesIO(buffer.data().data()))
 
 
     def open(self):
@@ -80,6 +96,22 @@ class Peripage(QWidget):
             self.scene.addPixmap(QPixmap.fromImage(self.image))
             self.window.immagine.fitInView(self.image.rect(), Qt.KeepAspectRatio)
             self.scene.update()
+            #battery info update
+            self.window.percentuale.setText(str(self.peripage.getDeviceBattery()))
+
+    def activateQR(self):
+        self.window.qrButton.setEnabled(True)
+        #battery info update
+        self.window.percentuale.setText(str(self.peripage.getDeviceBattery()))
+
+    def generateQR(self):
+        self.image = ImageQt.ImageQt(qrcode.make(self.window.qrLine.text(), border=self.window.qrBorder.value()).convert('L'))
+        self.scene.clear()
+        self.scene.addPixmap(QPixmap.fromImage(self.image))
+        self.window.immagine.fitInView(self.image.rect(), Qt.KeepAspectRatio)
+        self.scene.update()
+        #battery info update
+        self.window.percentuale.setText(str(self.peripage.getDeviceBattery()))
 
 
     def load_ui(self):
