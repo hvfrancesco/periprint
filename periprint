@@ -35,8 +35,8 @@ class Peripage(QWidget):
         self.window.printButton.clicked.connect(self.periPrintImage)
         self.window.breakButton.clicked.connect(self.paperFeed)
         self.window.loadButton.clicked.connect(self.open)
-        self.window.rotateCWButton.clicked.connect(self.rotateImageCW)
-        self.window.rotateACWButton.clicked.connect(self.rotateImageACW)
+        self.window.rotateCWButton.clicked.connect(lambda: self.rotateImage(90))
+        self.window.rotateACWButton.clicked.connect(lambda: self.rotateImage(-90))
         self.window.qrButton.clicked.connect(self.generateQR)
         self.window.qrLine.textChanged.connect(self.activateQR)
 
@@ -73,9 +73,10 @@ class Peripage(QWidget):
             self.window.percentuale.setText(str(self.peripage.getDeviceBattery()))
 
     def paperFeed(self):
-        self.peripage.printBreak(self.window.breaklength.value())
-        #battery info update
-        self.window.percentuale.setText(str(self.peripage.getDeviceBattery()))
+        if self.connected:
+            self.peripage.printBreak(self.window.breaklength.value())
+            #battery info update
+            self.window.percentuale.setText(str(self.peripage.getDeviceBattery()))
 
 
     def open(self):
@@ -89,18 +90,21 @@ class Peripage(QWidget):
                 return
             self.updateScene(self.image)
             #battery info update
-            self.window.percentuale.setText(str(self.peripage.getDeviceBattery()))
+            if self.connected:
+                self.window.percentuale.setText(str(self.peripage.getDeviceBattery()))
 
     def activateQR(self):
         self.window.qrButton.setEnabled(True)
         #battery info update
-        self.window.percentuale.setText(str(self.peripage.getDeviceBattery()))
+        if self.connected:
+            self.window.percentuale.setText(str(self.peripage.getDeviceBattery()))
 
     def generateQR(self):
         self.image = ImageQt.ImageQt(qrcode.make(self.window.qrLine.text(), border=self.window.qrBorder.value()).convert('L'))
         self.updateScene(self.image)
         #battery info update
-        self.window.percentuale.setText(str(self.peripage.getDeviceBattery()))
+        if self.connected:
+            self.window.percentuale.setText(str(self.peripage.getDeviceBattery()))
 
     def QImagetoPIL(self, img):
         buffer = QBuffer()
@@ -108,15 +112,9 @@ class Peripage(QWidget):
         img.save(buffer, "PNG")
         return Image.open(io.BytesIO(buffer.data().data()))
 
-    def rotateImageCW(self):
+    def rotateImage(self, angle):
         transform = QTransform()
-        transform.rotate(90)
-        self.image = self.image.transformed(transform)
-        self.updateScene(self.image)
-
-    def rotateImageACW(self):
-        transform = QTransform()
-        transform.rotate(-90)
+        transform.rotate(angle)
         self.image = self.image.transformed(transform)
         self.updateScene(self.image)
 
@@ -128,7 +126,7 @@ class Peripage(QWidget):
         if not self.window.rotateCWButton.isEnabled():
             self.window.rotateCWButton.setEnabled(True)
         if not self.window.rotateACWButton.isEnabled():
-            self.window.rotateACWButton.setEnabled(True)
+            self.window.rotateACWButton.setEnabled(True)    
 
     def load_ui(self):
         loader = QUiLoader()
