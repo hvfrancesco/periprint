@@ -66,9 +66,10 @@ class Peripage(QWidget):
 
     def periPrintImage(self):
         if self.connected:
-            self.peripage.setConcentration(self.window.contrast.value())
-            self.peripage.printImage(self.QImagetoPIL(self.image))
-            self.peripage.printBreak(self.window.breaklength.value())
+            for i in range(self.window.copies.value()):
+                self.peripage.setConcentration(self.window.contrast.value())
+                self.peripage.printImage(self.QImagetoPIL(self.image))
+                self.peripage.printBreak(self.window.breaklength.value())
             #battery info update
             self.window.percentuale.setText(str(self.peripage.getDeviceBattery()))
 
