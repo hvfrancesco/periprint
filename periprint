@@ -6,7 +6,7 @@ import sys
 import os
 
 
-from PySide2.QtWidgets import QApplication, QWidget, QFileDialog, QGraphicsScene, QMessageBox
+from PySide2.QtWidgets import QApplication, QWidget, QFileDialog, QGraphicsScene, QMessageBox, QComboBox
 from PySide2.QtCore import Qt, QBuffer, QFile
 from PySide2.QtUiTools import QUiLoader
 from PySide2.QtGui import QImage, QPixmap, QPalette, QPainter, QTransform
@@ -17,6 +17,7 @@ import ppa6
 import numpy
 from PIL import Image, ImageQt
 import io
+import time
 
 import qrcode
 
@@ -26,9 +27,14 @@ class Peripage(QWidget):
         super(Peripage, self).__init__()
         self.load_ui()
 
+        for type in ppa6.PrinterType:
+            self.window.comboPrinter.addItem(type.name)
+
         self.connected = False
-        self.peripageType = ppa6.PrinterType.A6p
+        self.peripageType = ppa6.PrinterType[self.window.comboPrinter.currentText()]
         self.timeout = 5.0
+        self.max_continuos_copies = 3
+        self.pausa = 2.0
 
         self.window.connectButton.clicked.connect(self.connectPrinter)
         #self.window.printButton.clicked.connect(self.periPrintTest)
@@ -39,11 +45,13 @@ class Peripage(QWidget):
         self.window.rotateACWButton.clicked.connect(lambda: self.rotateImage(-90))
         self.window.qrButton.clicked.connect(self.generateQR)
         self.window.qrLine.textChanged.connect(self.activateQR)
+        self.window.comboPrinter.currentIndexChanged.connect(self.setPrinterType)
 
         self.scene = QGraphicsScene()
         self.window.immagine.setScene(self.scene)
 
     def connectPrinter(self):
+        print(self.peripageType) #remember to remove after testing
         self.peripage = ppa6.Printer(self.window.mac.text(), self.peripageType, self.timeout)
         self.peripage.connect()
         self.peripage.reset()
@@ -70,6 +78,8 @@ class Peripage(QWidget):
             for i in range(self.window.copies.value()):          
                 self.peripage.printImage(self.QImagetoPIL(self.image))
                 self.peripage.printBreak(self.window.breaklength.value())
+                if (self.window.copies.value() > self.max_continuos_copies):
+                    time.sleep(self.pausa)
             #battery info update
             self.window.percentuale.setText(str(self.peripage.getDeviceBattery()))
 
@@ -112,6 +122,9 @@ class Peripage(QWidget):
         buffer.open(QBuffer.ReadWrite)
         img.save(buffer, "PNG")
         return Image.open(io.BytesIO(buffer.data().data()))
+
+    def setPrinterType(self):
+        self.peripageType = ppa6.PrinterType[self.window.comboPrinter.currentText()]
 
     def rotateImage(self, angle):
         transform = QTransform()
